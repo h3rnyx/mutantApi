@@ -1,4 +1,4 @@
-package impl;
+package com.example.demo.impl;
 
 import com.example.demo.service.MutantService;
 import org.junit.Test;

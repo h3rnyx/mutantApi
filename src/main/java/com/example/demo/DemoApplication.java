@@ -12,7 +12,7 @@ public class DemoApplication {
 	}
 
 	@GetMapping("/")
-	public String hello() {
-		return "hello world!";
+	public String welcome() {
+		return "MutantAPI v1.0";
 	}
 }

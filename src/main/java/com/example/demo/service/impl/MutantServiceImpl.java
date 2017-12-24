@@ -129,7 +129,7 @@ public class MutantServiceImpl implements MutantService{
             log.error(e.getMessage());
         }
 
-        float average = dnaQty > 0 ? 0f : mutantsQty/dnaQty;
+        float average = dnaQty <= 0 ? 0f : mutantsQty/dnaQty;
         log.debug("Mutants: " + mutantsQty, " - Humans: " + humansQty);
         return new StatsDTO(mutantsQty, humansQty, average);
     }

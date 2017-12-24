@@ -6,10 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,7 +22,14 @@ public class MutantServiceImpl implements MutantService{
                 contarSecuenciasPositivasVerticales(dna) + contarSecuenciasPositivasOblicuas(dna);
 
         boolean isMutant = cantidadDeSecuenciasPositivas > 1 ? true : false;
-        //jdbcTemplate.update(INSERT_STATEMENT, dna, isMutant);
+        try {
+            Connection conn = DriverManager.getConnection(getURL());
+            PreparedStatement preparedStmt = conn.prepareStatement(INSERT_STATEMENT);
+            preparedStmt.setString(1, dnaToString(dna));
+            preparedStmt.setBoolean(2, isMutant);
+        } catch(SQLException e) {
+            log.error(e.getMessage());
+        }
         return isMutant;
     }
 
@@ -108,16 +112,13 @@ public class MutantServiceImpl implements MutantService{
     }
 
     public StatsDTO getStats() {
-        long mutantsQty = 0L, humansQty = 0L, dnaQty = 0L;
-        String url = getURL();
-        log.debug("Conectando a: " + url);
+        long mutantsQty = 0L, humansQty = 0L;
         try {
-            Connection conn = DriverManager.getConnection(url);
+            Connection conn = DriverManager.getConnection(getURL());
             //Obtengo todos los dna's de la base de datos
             try (ResultSet rs = conn.prepareStatement(SELECT_STATEMENT).executeQuery()) {
                 //Cuento mutantes y humanos
                 while (rs.next()) {
-                    dnaQty++;
                     if(rs.getBoolean("isMutant")) {
                         mutantsQty++;
                     } else {
@@ -145,5 +146,13 @@ public class MutantServiceImpl implements MutantService{
         } else {
             return System.getProperty("ae-cloudsql.local-database-url");
         }
+    }
+
+    private String dnaToString(String[] dna) {
+        StringBuffer result = new StringBuffer();
+        for(String d : dna) {
+            result.append(d).append("|");
+        }
+        return result.toString();
     }
 }

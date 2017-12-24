@@ -129,9 +129,9 @@ public class MutantServiceImpl implements MutantService{
             log.error(e.getMessage());
         }
 
-        float average = dnaQty <= 0 ? 0f : mutantsQty/dnaQty;
+        float ratio = humansQty > 0 ? new Float(mutantsQty) / new Float(humansQty) : 0f;
         log.debug("Mutants: " + mutantsQty, " - Humans: " + humansQty);
-        return new StatsDTO(mutantsQty, humansQty, average);
+        return new StatsDTO(mutantsQty, humansQty, ratio);
     }
 
     private String getURL() {

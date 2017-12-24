@@ -1,11 +1,15 @@
 package com.example.demo.service.impl;
 
+import com.example.demo.config.CustomDataSourceConfig;
 import com.example.demo.model.StatsDTO;
 import com.example.demo.service.MutantService;
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.beans.PropertyVetoException;
 import java.sql.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -17,17 +21,23 @@ public class MutantServiceImpl implements MutantService{
     static final String INSERT_STATEMENT = "INSERT INTO dna_mutantes(id, dna, isMutant) VALUES(null, ?, ?);";
     static final String SELECT_STATEMENT = "SELECT id, dna, isMutant FROM dna_mutantes;";
 
+    @Autowired
+    CustomDataSourceConfig customDataSourceConfig;
+
     public boolean isMutant(String[] dna) {
         int cantidadDeSecuenciasPositivas = contarSecuenciasPositivasHorizontales(dna) +
                 contarSecuenciasPositivasVerticales(dna) + contarSecuenciasPositivasOblicuas(dna);
 
         boolean isMutant = cantidadDeSecuenciasPositivas > 1 ? true : false;
         try {
-            Connection conn = DriverManager.getConnection(getURL());
+            ComboPooledDataSource cpds = customDataSourceConfig.dataSource();
+            Connection conn = cpds.getConnection();
             PreparedStatement preparedStmt = conn.prepareStatement(INSERT_STATEMENT);
             preparedStmt.setString(1, dnaToString(dna));
             preparedStmt.setBoolean(2, isMutant);
-        } catch(SQLException e) {
+            preparedStmt.execute();
+            conn.close();
+        } catch(SQLException | PropertyVetoException e) {
             log.error(e.getMessage());
         }
         return isMutant;
@@ -114,7 +124,8 @@ public class MutantServiceImpl implements MutantService{
     public StatsDTO getStats() {
         long mutantsQty = 0L, humansQty = 0L;
         try {
-            Connection conn = DriverManager.getConnection(getURL());
+            ComboPooledDataSource cpds = customDataSourceConfig.dataSource();
+            Connection conn = cpds.getConnection();
             //Obtengo todos los dna's de la base de datos
             try (ResultSet rs = conn.prepareStatement(SELECT_STATEMENT).executeQuery()) {
                 //Cuento mutantes y humanos
@@ -126,7 +137,8 @@ public class MutantServiceImpl implements MutantService{
                     }
                 }
             }
-        } catch (SQLException e) {
+            conn.close();
+        } catch (SQLException | PropertyVetoException e) {
             log.error(e.getMessage());
         }
 
@@ -136,20 +148,24 @@ public class MutantServiceImpl implements MutantService{
     }
 
     private String getURL() {
-        if (System.getProperty("com.google.appengine.runtime.version").startsWith("Google App Engine/")) {
-            try {
-                Class.forName("com.mysql.jdbc.GoogleDriver");
-            } catch (ClassNotFoundException e) {
-                log.error("Error cargando Google JDBC Driver \t| " + e);
-            }
-            return System.getProperty("ae-cloudsql.cloudsql-database-url");
+        if(System.getProperty("com.google.appengine.runtime.version") == null) {
+            return "";
         } else {
-            return System.getProperty("ae-cloudsql.local-database-url");
+            if (System.getProperty("com.google.appengine.runtime.version").startsWith("Google App Engine/")) {
+                try {
+                    Class.forName("com.mysql.jdbc.GoogleDriver");
+                } catch (ClassNotFoundException e) {
+                    log.error("Error cargando Google JDBC Driver \t| " + e);
+                }
+                return System.getProperty("ae-cloudsql.cloudsql-database-url");
+            } else {
+                return System.getProperty("ae-cloudsql.local-database-url");
+            }
         }
     }
 
     private String dnaToString(String[] dna) {
-        StringBuffer result = new StringBuffer();
+        StringBuffer result = new StringBuffer("|");
         for(String d : dna) {
             result.append(d).append("|");
         }

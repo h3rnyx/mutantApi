@@ -1,6 +1,6 @@
 package com.example.demo.model;
 
-public class SecuenciaDnaDTO {
+public class DnaSequenceDTO {
     private String[] dna;
 
     public String[] getDna() {

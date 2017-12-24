@@ -1,5 +1,5 @@
-CREATE TABLE dna_mutantes (
+CREATE TABLE IF NOT EXISTS dna_mutantes (
   id BIGINT(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   dna VARCHAR(5000) NOT NULL,
-  isMutant boolean DEFAULT 0 NOT NULL;
+  isMutant boolean DEFAULT 0 NOT NULL
 );

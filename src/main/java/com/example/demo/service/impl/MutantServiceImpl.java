@@ -1,23 +1,20 @@
 package com.example.demo.service.impl;
 
-import com.example.demo.model.MutantDAO;
 import com.example.demo.model.StatsDTO;
 import com.example.demo.service.MutantService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
 public class MutantServiceImpl implements MutantService{
-
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
 
     private Logger log = LoggerFactory.getLogger(getClass().getName());
     static final String INSERT_STATEMENT = "INSERT INTO dna_mutantes(id, dna, isMutant) VALUES(null, ?, ?);";
@@ -28,7 +25,7 @@ public class MutantServiceImpl implements MutantService{
                 contarSecuenciasPositivasVerticales(dna) + contarSecuenciasPositivasOblicuas(dna);
 
         boolean isMutant = cantidadDeSecuenciasPositivas > 1 ? true : false;
-        jdbcTemplate.update(INSERT_STATEMENT, dna, isMutant);
+        //jdbcTemplate.update(INSERT_STATEMENT, dna, isMutant);
         return isMutant;
     }
 
@@ -111,27 +108,42 @@ public class MutantServiceImpl implements MutantService{
     }
 
     public StatsDTO getStats() {
-        long mutantsQty = 0L, humansQty = 0L;
-        //Leo todos los dnas en la base de datos:
-        List<MutantDAO> dnas = jdbcTemplate.query(SELECT_STATEMENT, (rs, rowNum) ->
-                new MutantDAO(
-                        rs.getLong("id"),
-                        rs.getString("dna"),
-                        rs.getBoolean("isMutant")
-                )
-        );
-
-        //Cuento mutantes y humanos
-        for (MutantDAO dna : dnas) {
-            if(dna.isMutant()) {
-                mutantsQty++;
-            } else {
-                humansQty++;
+        long mutantsQty = 0L, humansQty = 0L, dnaQty = 0L;
+        String url = getURL();
+        log.debug("Conectando a: " + url);
+        try {
+            Connection conn = DriverManager.getConnection(url);
+            //Obtengo todos los dna's de la base de datos
+            try (ResultSet rs = conn.prepareStatement(SELECT_STATEMENT).executeQuery()) {
+                //Cuento mutantes y humanos
+                while (rs.next()) {
+                    dnaQty++;
+                    if(rs.getBoolean("isMutant")) {
+                        mutantsQty++;
+                    } else {
+                        humansQty++;
+                    }
+                }
             }
+        } catch (SQLException e) {
+            log.error(e.getMessage());
         }
 
-        float average = dnas.isEmpty() ? 0f : mutantsQty/dnas.size();
+        float average = dnaQty > 0 ? 0f : mutantsQty/dnaQty;
         log.debug("Mutants: " + mutantsQty, " - Humans: " + humansQty);
         return new StatsDTO(mutantsQty, humansQty, average);
+    }
+
+    private String getURL() {
+        if (System.getProperty("com.google.appengine.runtime.version").startsWith("Google App Engine/")) {
+            try {
+                Class.forName("com.mysql.jdbc.GoogleDriver");
+            } catch (ClassNotFoundException e) {
+                log.error("Error cargando Google JDBC Driver \t| " + e);
+            }
+            return System.getProperty("ae-cloudsql.cloudsql-database-url");
+        } else {
+            return System.getProperty("ae-cloudsql.local-database-url");
+        }
     }
 }

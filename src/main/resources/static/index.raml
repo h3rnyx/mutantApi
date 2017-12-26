@@ -1,0 +1,50 @@
+#%RAML 1.0
+title: Mutant
+version: 1
+baseUri: https://mutantproject-189615.appspot.com
+documentation:
+  - title: Bienvenido a MutantAPI
+    content: |
+      API para determinar si un DNA pertenece a un mutante o a un humano. Adem&aacute;s podr&aacute;s obtener estad&iacute;sticas de los an&aacute;lisis realizados.
+  - title: GitHub Repo
+    content: |
+      https://github.com/h3rnyx/mutantApi
+
+/api:
+  /mutant:
+    description: Determinar si un DNA enviado pertenece a un mutante o no.
+
+    post:
+      description: |
+        Recibe un DNA dentro de un JSON (ver ejemplo). El response indica si el DNA pertenece a un mutante o no a trav&eacute;s del HTTP STATUS CODE.
+      body:
+        application/json:
+          example:
+            {
+              "dna": ["AAATAAAG", "CACGGCTT", "TTCTTTCC", "AGGAAGGC", "TCCCTATG", "ACTATGCT",	"TCCCGATG", "CATCTGCT"]
+            }
+      responses:
+        200:
+          description: |
+            El DNA corresponde a un mutante.
+
+        403:
+          description: |
+            El DNA no corresponde a un mutante.
+
+  /stats:
+    description: Obtener estad&iacute;sticas sobre los DNA analizados.
+
+    get:
+      description: |
+        Retorna estad&iacute;sticas de los an&aacute;lisis hasta el momento.
+      responses:
+        200:
+          body:
+            application/json:
+              example:
+                {
+                  count_mutant_dna: 1,
+                  count_human_dna: 2,
+                  ratio: 0.5
+                }

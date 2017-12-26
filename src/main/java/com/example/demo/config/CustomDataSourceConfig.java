@@ -31,6 +31,9 @@ public class CustomDataSourceConfig {
     @Value("${c3p0.url}")
     private String url;
 
+    @Value("${c3p0.local-url}")
+    private String urlLocal;
+
     @Value("${c3p0.username}")
     private String username;
 
@@ -49,10 +52,22 @@ public class CustomDataSourceConfig {
         dataSource.setIdleConnectionTestPeriod(idleTestPeriod);
         dataSource.setMaxStatements(maxStatements);
         dataSource.setMaxIdleTime(maxIdleTime);
-        dataSource.setJdbcUrl(url);
+        dataSource.setJdbcUrl(isLocalHost() ? urlLocal : url);
         dataSource.setPassword(password);
         dataSource.setUser(username);
         dataSource.setDriverClass(driverClassName);
         return dataSource;
+    }
+
+    private boolean isLocalHost() {
+        if(System.getProperty("com.google.appengine.runtime.version") == null) {
+            return true;
+        } else {
+            if (System.getProperty("com.google.appengine.runtime.version").startsWith("Google App Engine/")) {
+                return false;
+            } else {
+                return true;
+            }
+        }
     }
 }

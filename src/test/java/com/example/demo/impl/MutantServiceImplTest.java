@@ -1,11 +1,18 @@
 package com.example.demo.impl;
 
-import com.example.demo.service.MutantService;
+import com.example.demo.config.CustomDataSourceConfig;
+import com.example.demo.service.impl.MutantServiceImpl;
+import com.mchange.v2.c3p0.ComboPooledDataSource;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import java.beans.PropertyVetoException;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -14,8 +21,16 @@ import static org.junit.Assert.assertTrue;
 @SpringBootTest
 public class MutantServiceImplTest {
 
-    @Autowired
-    MutantService mutantService;
+    @InjectMocks
+    MutantServiceImpl mutantServiceImpl;
+
+    @Mock
+    CustomDataSourceConfig customDataSourceConfig;
+
+    @Before
+    public void setUp() throws PropertyVetoException {
+        Mockito.when(customDataSourceConfig.dataSource()).thenReturn(new ComboPooledDataSource());
+    }
 
     @Test
     public void isNoMutantTest() {
@@ -30,7 +45,7 @@ public class MutantServiceImplTest {
                 "TCACTGTT"
         };
 
-         assertFalse(mutantService.isMutant(dna));
+         assertFalse(mutantServiceImpl.isMutant(dna));
     }
 
     @Test
@@ -46,7 +61,7 @@ public class MutantServiceImplTest {
                 "TCACTGTT"
         };
 
-        assertTrue(mutantService.isMutant(dna));
+        assertTrue(mutantServiceImpl.isMutant(dna));
     }
 
     @Test
@@ -62,6 +77,6 @@ public class MutantServiceImplTest {
                 "TCACCGTT"
         };
 
-        assertTrue(mutantService.isMutant(dna));
+        assertTrue(mutantServiceImpl.isMutant(dna));
     }
 }

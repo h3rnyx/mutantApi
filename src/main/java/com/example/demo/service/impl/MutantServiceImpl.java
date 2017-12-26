@@ -147,23 +147,6 @@ public class MutantServiceImpl implements MutantService{
         return new StatsDTO(mutantsQty, humansQty, ratio);
     }
 
-    private String getURL() {
-        if(System.getProperty("com.google.appengine.runtime.version") == null) {
-            return "";
-        } else {
-            if (System.getProperty("com.google.appengine.runtime.version").startsWith("Google App Engine/")) {
-                try {
-                    Class.forName("com.mysql.jdbc.GoogleDriver");
-                } catch (ClassNotFoundException e) {
-                    log.error("Error cargando Google JDBC Driver \t| " + e);
-                }
-                return System.getProperty("ae-cloudsql.cloudsql-database-url");
-            } else {
-                return System.getProperty("ae-cloudsql.local-database-url");
-            }
-        }
-    }
-
     private String dnaToString(String[] dna) {
         StringBuffer result = new StringBuffer("|");
         for(String d : dna) {

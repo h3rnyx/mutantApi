@@ -28,18 +28,20 @@ public class MutantServiceImpl implements MutantService{
         int cantidadDeSecuenciasPositivas = contarSecuenciasPositivasHorizontales(dna) +
                 contarSecuenciasPositivasVerticales(dna) + contarSecuenciasPositivasOblicuas(dna);
 
-        boolean isMutant = cantidadDeSecuenciasPositivas > 1 ? true : false;
+        boolean isMutant = cantidadDeSecuenciasPositivas > 1;
+        //Guardo en la db el dna
         try {
+            //Obtengo una conexión del pool
             ComboPooledDataSource cpds = customDataSourceConfig.dataSource();
             Connection conn = cpds.getConnection();
             PreparedStatement preparedStmt = conn.prepareStatement(INSERT_STATEMENT);
             preparedStmt.setString(1, dnaToString(dna));
             preparedStmt.setBoolean(2, isMutant);
             preparedStmt.execute();
-            conn.close();
         } catch(SQLException | PropertyVetoException e) {
             log.error(e.getMessage());
         }
+
         return isMutant;
     }
 
@@ -50,7 +52,6 @@ public class MutantServiceImpl implements MutantService{
             cantSecuenciasPositivas += contarPositivosPorSecuencia(secuenciaDna);
         }
 
-        log.debug("Secuencias Horizontales:\t" + cantSecuenciasPositivas);
         return cantSecuenciasPositivas;
     }
 
@@ -66,7 +67,6 @@ public class MutantServiceImpl implements MutantService{
             cantSecuenciasPositivas += contarPositivosPorSecuencia(secuenciaAux.toString());
         }
 
-        log.debug("Secuencias Verticales:\t\t" + cantSecuenciasPositivas);
         return cantSecuenciasPositivas;
     }
 
@@ -75,7 +75,6 @@ public class MutantServiceImpl implements MutantService{
         int cantSecuenciasPositivas = contarPositivosEnDiagonalesInferirores(dna)
                 + contarPositivosEnDiagonalesSuperiores(dna);
 
-        log.debug("Secuencias Oblicuas:\t" + cantSecuenciasPositivas);
         return cantSecuenciasPositivas;
     }
 
@@ -118,6 +117,7 @@ public class MutantServiceImpl implements MutantService{
         while (matcher.find())
             cantPositivos++;
 
+        log.debug("Secuencia positiva encontrada: " + secuenciaDna);
         return cantPositivos;
     }
 
@@ -137,13 +137,12 @@ public class MutantServiceImpl implements MutantService{
                     }
                 }
             }
-            conn.close();
         } catch (SQLException | PropertyVetoException e) {
             log.error(e.getMessage());
         }
 
         float ratio = humansQty > 0 ? new Float(mutantsQty) / new Float(humansQty) : 0f;
-        log.debug("Mutants: " + mutantsQty, " - Humans: " + humansQty);
+        log.debug("Mutantes: " + mutantsQty, " - Humanos: " + humansQty);
         return new StatsDTO(mutantsQty, humansQty, ratio);
     }
 
